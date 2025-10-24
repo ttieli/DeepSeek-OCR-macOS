@@ -1,23 +1,24 @@
 #!/bin/bash
 
 ##############################################################################
-# DeepSeek-OCR macOS 傻瓜式操作 V2 - 真正的一键使用
+# DeepSeek-OCR macOS v1.0 - One-Click OCR Tool | 一键式 OCR 工具
 #
-# 特点：
-#   ✅ 自动检测并安装环境 - 新用户也能一键使用
-#   ✅ 交互式路径输入 - 无需预先准备图片
-#   ✅ 支持单文件或整个文件夹
-#   ✅ 自动创建输出目录
-#   ✅ 集成所有功能（无需额外脚本）
-#   ✅ CPU 优化模式
+# Features | 特点:
+#   ✅ Auto environment setup | 自动检测并安装环境
+#   ✅ Interactive path input | 交互式路径输入
+#   ✅ Single file or folder | 支持单文件或文件夹
+#   ✅ Auto output directory | 自动创建输出目录
+#   ✅ Integrated all-in-one | 集成所有功能
+#   ✅ CPU optimized mode | CPU 优化模式
+#   ✅ Chip adaptive | 智能芯片适配 (Apple Silicon & Intel)
 #
-# 使用方法：
-#   1. 打开终端
-#   2. 将此脚本拖到终端窗口，按回车
-#   3. 首次运行自动安装环境（10-20分钟）
-#   4. 粘贴图片路径（支持从 Finder 拖拽）
-#   5. 选择识别模式（1-5）
-#   6. 等待完成，结果保存在 ocr_output/ 文件夹
+# Usage | 使用方法:
+#   1. Open Terminal | 打开终端
+#   2. Drag script to Terminal, press Enter | 拖拽脚本到终端，回车
+#   3. First run auto-installs (10-20 min) | 首次运行自动安装（10-20分钟）
+#   4. Paste image path or drag from Finder | 粘贴图片路径或从访达拖拽
+#   5. Select OCR mode (1-5) | 选择识别模式（1-5）
+#   6. Results saved in ocr_output/ | 结果保存在 ocr_output/
 #
 ##############################################################################
 
@@ -44,14 +45,15 @@ clear
 ##############################################################################
 echo ""
 echo -e "${BOLD}${CYAN}============================================================${NC}"
-echo -e "${BOLD}${CYAN}    DeepSeek-OCR macOS 傻瓜式操作 V2 | Easy OCR Tool${NC}"
+echo -e "${BOLD}${CYAN}    DeepSeek-OCR macOS v1.0 | One-Click OCR Tool${NC}"
 echo -e "${BOLD}${CYAN}============================================================${NC}"
 echo ""
 echo -e "${GREEN}✨ Features | 特点${NC}"
-echo "   • Auto-install environment | 自动检测并安装环境"
+echo "   • Auto environment setup | 自动环境配置"
+echo "   • Chip adaptive | 智能芯片适配 (M1/M2/M3 & Intel)"
 echo "   • Interactive path input | 交互式路径输入"
-echo "   • Single file or folder | 支持单文件或文件夹"
-echo "   • Drag & drop support | 支持拖拽操作"
+echo "   • Batch processing | 批量处理支持"
+echo "   • Drag & drop support | 拖拽操作支持"
 echo ""
 echo -e "${CYAN}------------------------------------------------------------${NC}"
 echo ""
