@@ -88,6 +88,7 @@ def disable_cuda(device: str):
     Force-disable CUDA paths when running on CPU/MPS by monkeypatching torch cuda helpers.
     The upstream DeepSeek-OCR infer call uses `.cuda()` directly; on macOS/CPU we redirect
     to `.to(device)` instead of crashing.
+    Also handles dtype conversion since MPS doesn't support bfloat16.
     """
     if device == "cuda":
         return
@@ -95,8 +96,13 @@ def disable_cuda(device: str):
     # Monkeypatch torch.cuda.is_available
     torch.cuda.is_available = lambda: False
     # Monkeypatch Tensor.cuda to avoid hard-coded .cuda() in remote code
+    # Also convert bfloat16 to float16 for MPS compatibility
     def _noop_cuda(self, *args, **kwargs):
-        return self.to(device)
+        tensor = self
+        # MPS doesn't support bfloat16, convert to float16
+        if device == "mps" and tensor.dtype == torch.bfloat16:
+            tensor = tensor.to(dtype=torch.float16)
+        return tensor.to(device)
     torch.Tensor.cuda = _noop_cuda
 
 def clean_ocr_output(text: str) -> str:
