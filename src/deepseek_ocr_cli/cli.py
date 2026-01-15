@@ -10,7 +10,8 @@ console = Console()
 @click.option('--mode', default='document', type=click.Choice(['document', 'standard', 'format-free', 'chart', 'detail'], case_sensitive=False), help='OCR Mode')
 @click.option('--output', '-o', type=click.Path(file_okay=False, writable=True), help='Output directory')
 @click.option('--device', type=click.Choice(['cpu', 'mps']), help='Force specific device')
-def main(input_path, url, mode, output, device):
+@click.option('--model-cache', type=click.Path(exists=True, file_okay=False, readable=True), help='Explicit path to DeepSeek-OCR model directory')
+def main(input_path, url, mode, output, device, model_cache):
     """DeepSeek-OCR Local CLI
 
     Parse local images, PDFs, or DOCX files to Markdown.
@@ -27,7 +28,7 @@ def main(input_path, url, mode, output, device):
              console.print(f"[red]Error: File '{input_path}' does not exist.[/red]")
              return
 
-    process_file(input_path, url, mode, output, device)
+    process_file(input_path, url, mode, output, device, model_cache)
 
 if __name__ == '__main__':
     main()

@@ -250,11 +250,28 @@ scripts = { "dsocr" = "deepseek_ocr_cli.cli:main" }
     - Connected CLI arguments to `process_file`.
     - Added simple validation for input path vs URL.
 
-## 最新可行性检查（阶段 2 代码）
+### [Date: 2026-01-15] Phase 3: Robustness Refinements | 第三阶段：健壮性优化
+1.  **DOCX Fallback**: Refined `converters.py` to ensure correct fallback chain:
+    **DOCX 回退:** 优化了 `converters.py` 以确保正确的回退链：
+    - Strategy 1: `docx2pdf` (Microsoft Word)
+    - Strategy 2: LibreOffice (`soffice`)
+    - Strategy 3: `pypandoc` (as last resort attempt)
+    - Catch exceptions individually to prevent one failure from blocking others.
+2.  **Environment Variables**:
+    **环境变量:**
+    - Updated `utils.py` to check `DSOCR_MODEL_DIR` first in model detection.
+    - Added `DSOCR_OFFLINE` check in `download_model` to hard-fail if network is disabled.
+3.  **Error Handling**:
+    **错误处理:**
+    - Updated `core.py` to check if `input_path` is valid after download attempt, aborting gracefully if download failed.
+4.  **Node Feedback**:
+    **Node 反馈:**
+    - Enhanced `scripts/postinstall.js` to display Python version and list supported environment variables.
 
-- DOCX 转 PDF 回退链路未完整：`docx_to_pdf` 在 docx2pdf 失败后仅检查 pandoc 是否存在，却未调用 `pypandoc` 做实际转换，并直接尝试 LibreOffice；若无 Word/LibreOffice 而已安装 pandoc，仍会失败。需补上真实 pypandoc 转换或明确提示。  
-- URL 下载失败时缺少兜底：`download_file` 失败返回 None，但 `process_file` 继续执行会导致后续错误，需在下载失败时中止并提示。  
-- 自定义模型路径/离线模式未暴露：`check_model_exists` 仅读取 HF_HOME/默认缓存，CLI 未提供 `--model-cache`，也未支持 DSOCR_MODEL_DIR/DSOCR_OFFLINE 等环境变量，离线场景下仍会尝试联网下载。  
-- 资源控制提示缺失：PDF 渲染与推理未提供页批次/DPI/并发参数，长 PDF 可能内存飙升（虽当前不强求性能优化，但应在文档中提示风险）。  
-- 依赖说明需同步：代码新增 `huggingface_hub`、`docx2pdf`、`pypandoc`，但文档尚未强调系统前置（pandoc/Word/LibreOffice）及 HF token 需求，安装失败时用户可能不知原因。  
-- Node 封装提示有限：postinstall 仅警告未安装 dsocr/Python，未提示 HF_HOME/模型缓存透传与 Python 版本检测结果；若未装 pipx 仅提示不会自动处理（符合“不删功能”，但需文档注明前置条件）。
+## 阶段 3 可行性补充
+
+- 文档与依赖清单存在轻微偏差：前文的依赖列表仍未包含新引入的 `huggingface_hub`、`docx2pdf`，且 Phase 2 中描述的 DOCX 回退顺序（docx2pdf -> pypandoc -> libreoffice）与当前实现（docx2pdf -> LibreOffice -> pypandoc）不一致，易让后续维护误判链路。建议在文档中补充这些差异。  
+- DOCX->PDF 最终回退仍依赖外部 PDF 引擎：`pypandoc` 转 PDF 需要系统安装 pdf-engine（pdflatex 或 wkhtmltopdf 等），否则会失败；当前仅打印警告，需在文档或安装提示中明确这一要求。  
+- CPU bfloat16 兼容性风险：`model = model.eval().to(dtype=torch.bfloat16).to(device)` 在部分 Intel CPU 上可能不支持 bfloat16，从而报错。可在加载时回退到 float16/float32，或在文档提示 Intel CPU 用户优先 MPS/兼容模式。  
+- 模型路径 CLI 参数缺失：虽然新增 `DSOCR_MODEL_DIR`/`DSOCR_OFFLINE` 环境变量，但 CLI 尚未提供 `--model-cache` 等显式参数，用户需通过环境变量配置；若希望与 mineru-cloud 相似的参数化体验，可后续补充。  
+- 下载超时/重试未设置：`download_file` 使用默认超时且无重试，弱网环境下载 URL 时仍可能中断；若需要提高鲁棒性，可增加超时与重试策略。
