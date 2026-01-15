@@ -7,6 +7,8 @@ from pathlib import Path
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from huggingface_hub import snapshot_download
+import torch
+import re
 
 console = Console()
 
@@ -80,6 +82,42 @@ def download_model(target_dir=None):
     except Exception as e:
         console.print(f"[bold red]Download failed: {e}[/bold red]")
         sys.exit(1)
+
+def disable_cuda(device: str):
+    """
+    Force-disable CUDA paths when running on CPU/MPS by monkeypatching torch cuda helpers.
+    The upstream DeepSeek-OCR infer call uses `.cuda()` directly; on macOS/CPU we redirect
+    to `.to(device)` instead of crashing.
+    """
+    if device == "cuda":
+        return
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    # Monkeypatch torch.cuda.is_available
+    torch.cuda.is_available = lambda: False
+    # Monkeypatch Tensor.cuda to avoid hard-coded .cuda() in remote code
+    def _noop_cuda(self, *args, **kwargs):
+        return self.to(device)
+    torch.Tensor.cuda = _noop_cuda
+
+def clean_ocr_output(text: str) -> str:
+    """
+    Remove model-specific markers (<|ref|>, <|det|>, compression stats) for cleaner output.
+    """
+    if not text:
+        return text
+    # Strip ref/det blocks
+    text = re.sub(r"<\|ref\|>.*?<\|/ref\|>", "", text, flags=re.DOTALL)
+    text = re.sub(r"<\|det\|>.*?<\|/det\|>", "", text, flags=re.DOTALL)
+    # Drop lines with heavy diagnostics
+    cleaned_lines = []
+    for line in text.splitlines():
+        if line.startswith("=") or line.startswith("BASE:") or "compression ratio" in line:
+            continue
+        cleaned_lines.append(line)
+    # Collapse excessive blank lines
+    cleaned = "\n".join(cleaned_lines)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned
 
 def patch_transformers():
     """
