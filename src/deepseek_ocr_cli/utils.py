@@ -121,44 +121,60 @@ def clean_ocr_output(text: str) -> str:
 
 def patch_transformers():
     """
-    Apply the runtime patch for transformers.models.llava_next.modeling_llava_next
-    Required for DeepSeek-OCR to work correctly (vision_feature_layer = -2).
+    Apply runtime patches for transformers compatibility with DeepSeek-OCR.
+    1. Patch vision_feature_layer default from -1 to -2
+    2. Add stub for LlamaFlashAttention2 if missing (removed in newer transformers)
     """
     try:
         import transformers
+        from transformers.models.llama import modeling_llama
+
+        # Patch 1: Add LlamaFlashAttention2 stub if missing
+        if not hasattr(modeling_llama, 'LlamaFlashAttention2'):
+            # Create a dummy class that the model code can import
+            # The actual flash attention won't be used on MPS/CPU anyway
+            class LlamaFlashAttention2:
+                pass
+            modeling_llama.LlamaFlashAttention2 = LlamaFlashAttention2
+            console.print("[dim]Added LlamaFlashAttention2 stub for compatibility.[/dim]")
+    except Exception as e:
+        console.print(f"[yellow]Warning: Could not patch LlamaFlashAttention2: {e}[/yellow]")
+
+    # Patch 2: vision_feature_layer default
+    try:
         from transformers.models.llava_next import modeling_llava_next
-        
+
         # Locate the file on disk
         target_file = Path(modeling_llava_next.__file__)
-        
+
         # Check if we need to patch
         with open(target_file, 'r', encoding='utf-8') as f:
             content = f.read()
-            
+
         old_str = 'vision_feature_layer = kwargs.get("vision_feature_layer", -1)'
         new_str = 'vision_feature_layer = kwargs.get("vision_feature_layer", -2)'
-        
+
         if old_str in content:
             console.print("[yellow]Patching transformers library for DeepSeek-OCR compatibility...[/yellow]")
             content = content.replace(old_str, new_str)
-            
+
             # Backup
             backup_file = target_file.with_suffix('.py.bak')
             if not backup_file.exists():
                 shutil.copy2(target_file, backup_file)
-                
+
             # Write Patch
             with open(target_file, 'w', encoding='utf-8') as f:
                 f.write(content)
             console.print("[green]Patch applied successfully.[/green]")
-        
+
         elif new_str in content:
             # Already patched
-            pass 
+            pass
         else:
             # Code structure might have changed in newer transformers
             console.print("[dim]Transformers library seems to have a different structure, skipping patch.[/dim]")
-            
+
     except Exception as e:
         console.print(f"[red]Warning: Failed to patch transformers: {e}[/red]")
 
