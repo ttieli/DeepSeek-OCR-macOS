@@ -1,0 +1,17 @@
+{
+  "name": "deepseek-ocr-cli",
+  "version": "1.0.0",
+  "description": "DeepSeek-OCR wrapper for macOS",
+  "bin": {
+    "dsocr": "./bin/dsocr.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "files": [
+    "bin",
+    "scripts"
+  ],
+  "author": "ttieli",
+  "license": "MIT"
+}

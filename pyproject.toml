@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deepseek-ocr-cli"
+version = "1.0.0"
+description = "A local CLI for DeepSeek-OCR on macOS"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch",
+    "torchvision",
+    "transformers>=4.46.3",
+    "tokenizers>=0.20.3",
+    "pymupdf",
+    "click",
+    "pillow",
+    "einops",
+    "easydict",
+    "requests",
+    "pypandoc",
+    "rich",
+    "huggingface_hub",
+    "docx2pdf; sys_platform == 'darwin'"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: MacOS",
+]
+
+[project.scripts]
+dsocr = "deepseek_ocr_cli.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

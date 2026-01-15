@@ -201,3 +201,37 @@ scripts = { "dsocr" = "deepseek_ocr_cli.cli:main" }
 - 版本/补丁风险：现有 shell 流程对 transformers llava_next 有热补丁，方案未说明如何在打包后固化（例如锁定 transformers 版本或内置补丁）；否则可能运行时报 vision_feature_layer 相关错误。  
 - 输出策略明确化：按照需求仅需按页顺序合并为单一 Markdown，无需页眉页脚去重或表格/公式修正。需要在实现时固定输出文件命名（如 `<input_stem>.md`）并按页顺序追加，避免分散多文件。  
 - 安装可用性：pipx+torch 在干净 macOS 环境可能因缺失 Xcode CLT/代理导致 wheel 拉取失败；方案应在安装说明中给出前置条件提示或失败提示（保持功能不删减，仅增加提示）。
+
+## 现状检查反馈（基于已完成进度）
+
+- 目录/骨架：`src/deepseek_ocr_cli` 与 `bin/dsocr.js` 已创建，`pyproject.toml`/`package.json` 已落地。现有 Python 文件均为占位，尚未实现实际逻辑。  
+- package.json 存在 `"postinstall": "node scripts/postinstall.js"`，但当前缺少 `scripts/postinstall.js` 文件，安装时会报错。需补齐脚本或移除引用（建议补齐并检查 pipx/Python/HF_HOME）。  
+- CLI 入口：`cli.py` 未调用 `process_file`（调用被注释），URL 下载为 TODO；设备选择/输出目录/模式映射未完成。  
+- 核心逻辑：`core.py` 仅占位，未加载模型、未分发到 image/pdf/docx 处理；未接入本地模型复用检测。  
+- 转换工具：`converters.py` 未实现 DOCX->PDF（需 pandoc/pypandoc）与 PDF->image（pymupdf）；`utils.py` 的下载与模型检测未实现。  
+- 依赖：`pyproject.toml` 已包含 `pypandoc`，但未在文档中声明 `pandoc` 系统依赖；torch 版本未按架构区分（Intel 需锁定 2.2.2）；缺少 transformers 补丁固化策略。  
+- Node 封装：`bin/dsocr.js` 只检测 `dsocr` 是否存在，未透传 HF_HOME/模型路径，也未输出更详细错误上下文。  
+- 文档对“默认复用本地模型、缺失才下载”的要求尚未在代码里落实（需要在核心逻辑中检测 `~/.cache/huggingface`/`HF_HOME`/自定义路径）。
+
+## Implementation Log | 实施日志
+
+### [Date: 2026-01-15] Phase 1: Structure & Skeletons | 第一阶段：结构与骨架
+1.  **Backup**: Created git backup `Backup: Before implementing dsocr CLI`.
+    **备份:** 创建了 git 备份 `Backup: Before implementing dsocr CLI`。
+2.  **File Structure**: Created directory tree.
+    **文件结构:** 创建了目录树。
+    - `src/deepseek_ocr_cli/`
+    - `bin/`
+3.  **Python Configuration**: Created `pyproject.toml`.
+    **Python 配置:** 创建了 `pyproject.toml`。
+    - Added dependencies: `torch`, `transformers`, `pymupdf`, `click`, `rich`, `pillow`, `requests`, `pypandoc`, `einops`, `easydict`.
+    - Defined entry point script: `dsocr = "deepseek_ocr_cli.cli:main"`.
+4.  **NPM Wrapper**: Created `package.json` and `bin/dsocr.js`.
+    **NPM 封装器:** 创建了 `package.json` 和 `bin/dsocr.js`。
+    - `dsocr.js`: Checks for Python command presence and wraps execution.
+5.  **Source Code Skeletons**:
+    **源代码骨架:**
+    - `cli.py`: Basic `click` command structure with arguments (`--url`, `--mode`, `--output`).
+    - `core.py`: Placeholder for main processing logic (file type detection).
+    - `converters.py`: Placeholder for PDF/DOCX conversion.
+    - `utils.py`: Placeholder for downloads and model checks.
