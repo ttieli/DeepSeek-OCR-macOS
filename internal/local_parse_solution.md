@@ -202,17 +202,6 @@ scripts = { "dsocr" = "deepseek_ocr_cli.cli:main" }
 - 输出策略明确化：按照需求仅需按页顺序合并为单一 Markdown，无需页眉页脚去重或表格/公式修正。需要在实现时固定输出文件命名（如 `<input_stem>.md`）并按页顺序追加，避免分散多文件。  
 - 安装可用性：pipx+torch 在干净 macOS 环境可能因缺失 Xcode CLT/代理导致 wheel 拉取失败；方案应在安装说明中给出前置条件提示或失败提示（保持功能不删减，仅增加提示）。
 
-## 现状检查反馈（基于已完成进度）
-
-- 目录/骨架：`src/deepseek_ocr_cli` 与 `bin/dsocr.js` 已创建，`pyproject.toml`/`package.json` 已落地。现有 Python 文件均为占位，尚未实现实际逻辑。  
-- package.json 存在 `"postinstall": "node scripts/postinstall.js"`，但当前缺少 `scripts/postinstall.js` 文件，安装时会报错。需补齐脚本或移除引用（建议补齐并检查 pipx/Python/HF_HOME）。  
-- CLI 入口：`cli.py` 未调用 `process_file`（调用被注释），URL 下载为 TODO；设备选择/输出目录/模式映射未完成。  
-- 核心逻辑：`core.py` 仅占位，未加载模型、未分发到 image/pdf/docx 处理；未接入本地模型复用检测。  
-- 转换工具：`converters.py` 未实现 DOCX->PDF（需 pandoc/pypandoc）与 PDF->image（pymupdf）；`utils.py` 的下载与模型检测未实现。  
-- 依赖：`pyproject.toml` 已包含 `pypandoc`，但未在文档中声明 `pandoc` 系统依赖；torch 版本未按架构区分（Intel 需锁定 2.2.2）；缺少 transformers 补丁固化策略。  
-- Node 封装：`bin/dsocr.js` 只检测 `dsocr` 是否存在，未透传 HF_HOME/模型路径，也未输出更详细错误上下文。  
-- 文档对“默认复用本地模型、缺失才下载”的要求尚未在代码里落实（需要在核心逻辑中检测 `~/.cache/huggingface`/`HF_HOME`/自定义路径）。
-
 ## Implementation Log | 实施日志
 
 ### [Date: 2026-01-15] Phase 1: Structure & Skeletons | 第一阶段：结构与骨架
@@ -235,3 +224,37 @@ scripts = { "dsocr" = "deepseek_ocr_cli.cli:main" }
     - `core.py`: Placeholder for main processing logic (file type detection).
     - `converters.py`: Placeholder for PDF/DOCX conversion.
     - `utils.py`: Placeholder for downloads and model checks.
+
+### [Date: 2026-01-15] Phase 2: Implementation of Logic | 第二阶段：逻辑实现
+1.  **Fixing Gaps**: Addressed issues from "Status Check Feedback".
+    **修复缺口:** 解决了“现状检查反馈”中的问题。
+    - **NPM**: Created `scripts/postinstall.js` to warn if Python/`dsocr` is missing. Updated `bin/dsocr.js` to inherit environment variables (`HF_HOME` etc.).
+    - **Dependencies**: Added `huggingface_hub` and `docx2pdf` (Darwin) to `pyproject.toml`.
+2.  **Utils Module**: Implemented `src/deepseek_ocr_cli/utils.py`.
+    **Utils 模块:** 实现了 `src/deepseek_ocr_cli/utils.py`。
+    - `check_model_exists`: Looks in `HF_HOME` or default HF cache for existing model to avoid re-download.
+    - `download_model`: Uses `snapshot_download` with resume support.
+    - `patch_transformers`: Implements the runtime monkey-patch for `llava_next` (vision_feature_layer = -2) required by DeepSeek-OCR.
+    - `download_file`: Handles URL downloads with progress bar.
+3.  **Converters Module**: Implemented `src/deepseek_ocr_cli/converters.py`.
+    **Converters 模块:** 实现了 `src/deepseek_ocr_cli/converters.py`。
+    - `docx_to_pdf`: Tries `docx2pdf` (Word), then `pypandoc`, then `libreoffice`.
+    - `pdf_to_images`: Uses `pymupdf` (fitz) to render pages at 200 DPI.
+4.  **Core Logic**: Implemented `src/deepseek_ocr_cli/core.py`.
+    **核心逻辑:** 实现了 `src/deepseek_ocr_cli/core.py`。
+    - Loads model (auto-detects device MPS/CPU).
+    - Processes pipeline: URL Download -> Convert to Images -> Batch Inference -> Markdown Assembly.
+    - Output format: Single Markdown file with "## Page X" headers.
+5.  **CLI Wiring**: Updated `src/deepseek_ocr_cli/cli.py`.
+    **CLI 连接:** 更新了 `src/deepseek_ocr_cli/cli.py`。
+    - Connected CLI arguments to `process_file`.
+    - Added simple validation for input path vs URL.
+
+## 最新可行性检查（阶段 2 代码）
+
+- DOCX 转 PDF 回退链路未完整：`docx_to_pdf` 在 docx2pdf 失败后仅检查 pandoc 是否存在，却未调用 `pypandoc` 做实际转换，并直接尝试 LibreOffice；若无 Word/LibreOffice 而已安装 pandoc，仍会失败。需补上真实 pypandoc 转换或明确提示。  
+- URL 下载失败时缺少兜底：`download_file` 失败返回 None，但 `process_file` 继续执行会导致后续错误，需在下载失败时中止并提示。  
+- 自定义模型路径/离线模式未暴露：`check_model_exists` 仅读取 HF_HOME/默认缓存，CLI 未提供 `--model-cache`，也未支持 DSOCR_MODEL_DIR/DSOCR_OFFLINE 等环境变量，离线场景下仍会尝试联网下载。  
+- 资源控制提示缺失：PDF 渲染与推理未提供页批次/DPI/并发参数，长 PDF 可能内存飙升（虽当前不强求性能优化，但应在文档中提示风险）。  
+- 依赖说明需同步：代码新增 `huggingface_hub`、`docx2pdf`、`pypandoc`，但文档尚未强调系统前置（pandoc/Word/LibreOffice）及 HF token 需求，安装失败时用户可能不知原因。  
+- Node 封装提示有限：postinstall 仅警告未安装 dsocr/Python，未提示 HF_HOME/模型缓存透传与 Python 版本检测结果；若未装 pipx 仅提示不会自动处理（符合“不删功能”，但需文档注明前置条件）。

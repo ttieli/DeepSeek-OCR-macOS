@@ -16,10 +16,22 @@ DEFAULT_CACHE_DIR = Path.home() / ".cache" / "huggingface" / "hub"
 def check_model_exists(custom_dir=None):
     """
     Check if the DeepSeek-OCR model exists locally.
-    Prioritizes custom_dir, then HF_HOME env var, then default HF cache.
+    Prioritizes:
+    1. custom_dir (CLI arg)
+    2. DSOCR_MODEL_DIR (Env var)
+    3. HF_HOME (Env var)
+    4. Default HF cache
     Returns the path to the model if found, else None.
     """
-    # 1. Check Custom Directory
+    # 0. Check Env Var Override
+    env_model_dir = os.environ.get("DSOCR_MODEL_DIR")
+    if env_model_dir:
+        path = Path(env_model_dir)
+        if path.exists() and (path / "config.json").exists():
+             console.print(f"[dim]Found model in DSOCR_MODEL_DIR: {path}[/dim]")
+             return path
+
+    # 1. Check Custom Directory (CLI arg)
     if custom_dir:
         path = Path(custom_dir)
         if path.exists() and (path / "config.json").exists():
@@ -47,7 +59,12 @@ def check_model_exists(custom_dir=None):
 def download_model(target_dir=None):
     """
     Download the model using huggingface_hub if not present.
+    Respects DSOCR_OFFLINE env var.
     """
+    if os.environ.get("DSOCR_OFFLINE") == "1":
+        console.print("[bold red]DSOCR_OFFLINE is set. Model not found locally and download is disabled.[/bold red]")
+        sys.exit(1)
+
     console.print(f"[bold blue]Model not found locally.[/bold blue]")
     console.print(f"Downloading {DEEPSEEK_REPO} (approx. 10GB)...")
     

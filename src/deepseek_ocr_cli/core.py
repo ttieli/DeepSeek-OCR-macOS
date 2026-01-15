@@ -114,7 +114,7 @@ def process_file(input_path, url, mode, output_dir, device_arg):
             # Default output dir logic needs input path, so set it later
             
     if not input_path:
-        console.print("[red]No input file provided.[/red]")
+        console.print("[red]No input file provided or download failed.[/red]")
         return
 
     input_path = Path(input_path)
