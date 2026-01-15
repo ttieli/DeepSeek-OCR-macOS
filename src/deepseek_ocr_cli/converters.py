@@ -13,57 +13,77 @@ def docx_to_pdf(input_path):
     Convert DOCX to PDF.
     Strategy:
     1. Try docx2pdf (Requires MS Word on macOS).
-    2. Try pypandoc (Requires pandoc).
-    3. Fail.
+    2. Try LibreOffice (headless).
+    3. Try pypandoc (Requires pandoc + latex/wkhtmltopdf, often fails for complex docs).
     """
     input_path = Path(input_path).absolute()
     output_path = input_path.with_suffix('.pdf')
     
-    # Strategy 1: docx2pdf
+    # Strategy 1: docx2pdf (MS Word)
     if sys.platform == 'darwin':
         try:
             from docx2pdf import convert
-            console.print("[dim]Converting DOCX to PDF using docx2pdf (MS Word)...[/dim]")
+            console.print("[dim]Attempt 1: Converting DOCX to PDF using docx2pdf (MS Word)...[/dim]")
             convert(str(input_path), str(output_path))
             if output_path.exists():
                 return output_path
         except Exception as e:
             console.print(f"[yellow]docx2pdf failed: {e}. Trying fallback...[/yellow]")
-    
-    # Strategy 2: pypandoc
+
+    # Strategy 2: LibreOffice
+    # Common paths for LibreOffice on macOS
+    soffice_paths = [
+        "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+        "/usr/bin/soffice",
+        "/usr/local/bin/soffice"
+    ]
+    soffice_cmd = None
+    for p in soffice_paths:
+        if Path(p).exists():
+            soffice_cmd = p
+            break
+            
+    if soffice_cmd:
+        try:
+            console.print("[dim]Attempt 2: Converting DOCX to PDF using LibreOffice...[/dim]")
+            cmd = [
+                soffice_cmd,
+                "--headless",
+                "--convert-to", "pdf",
+                "--outdir", str(input_path.parent),
+                str(input_path)
+            ]
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if output_path.exists():
+                return output_path
+        except Exception as e:
+             console.print(f"[yellow]LibreOffice conversion failed: {e}.[/yellow]")
+    else:
+        console.print("[dim]LibreOffice not found, skipping.[/dim]")
+
+    # Strategy 3: pypandoc (Last resort, likely to fail if no latex engine)
     try:
         import pypandoc
         # Check if pandoc is installed
         try:
             pypandoc.get_pandoc_version()
+            console.print("[dim]Attempt 3: Converting DOCX to PDF using pypandoc...[/dim]")
+            # Note: This often requires pdf-engine like pdflatex installed
+            pypandoc.convert_file(str(input_path), 'pdf', outputfile=str(output_path))
+            if output_path.exists():
+                return output_path
         except OSError:
-            raise RuntimeError("Pandoc not found. Please install via 'brew install pandoc'.")
-
-        console.print("[dim]Converting DOCX to PDF using pypandoc...[/dim]")
-        # pypandoc conversion to pdf usually requires a pdf engine (wkhtmltopdf or pdflatex)
-        # But simpler fallback is converting to text if visual layout isn't critical?
-        # Re-reading requirement: "Start with Option 1 (Visual)... preserving layout".
-        # Pandoc to PDF via LaTeX is heavy. 
-        # Alternative: Use libreoffice if available.
-        
-        # Trying subprocess for LibreOffice (headless)
-        cmd = [
-            "/Applications/LibreOffice.app/Contents/MacOS/soffice",
-            "--headless",
-            "--convert-to", "pdf",
-            "--outdir", str(input_path.parent),
-            str(input_path)
-        ]
-        if Path(cmd[0]).exists():
-             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-             if output_path.exists():
-                 return output_path
-    
-    except Exception as e:
-         console.print(f"[red]Conversion failed: {e}[/red]")
+            console.print("[yellow]Pandoc not installed.[/yellow]")
+        except Exception as e:
+            console.print(f"[yellow]pypandoc conversion failed: {e}[/yellow]")
+            
+    except ImportError:
+        pass
     
     if not output_path.exists():
-        raise RuntimeError("Could not convert DOCX to PDF. Please install Microsoft Word or LibreOffice.")
+        raise RuntimeError(
+            "Could not convert DOCX to PDF. Please install Microsoft Word, LibreOffice, or Pandoc+PDFEngine."
+        )
     
     return output_path
 
