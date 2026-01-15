@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2025-01-15
+
+### 🐛 Bug Fixes | 问题修复
+
+- **Fixed missing dependencies** | 修复缺失依赖
+  - Added `numpy<2`, `addict`, `matplotlib` to dependencies
+  - 添加了 `numpy<2`, `addict`, `matplotlib` 依赖
+
+- **Fixed transformers compatibility** | 修复 transformers 兼容性
+  - Pinned `transformers==4.46.3` and `tokenizers==0.20.3` to avoid `LlamaFlashAttention2` import error
+  - 固定 `transformers==4.46.3` 和 `tokenizers==0.20.3` 版本，避免 `LlamaFlashAttention2` 导入错误
+
+- **Fixed MPS bfloat16 support** | 修复 MPS bfloat16 支持
+  - MPS does not support bfloat16, now auto-converts to float16
+  - MPS 不支持 bfloat16，现自动转换为 float16
+
+- **Added LlamaFlashAttention2 compatibility patch** | 添加 LlamaFlashAttention2 兼容性补丁
+  - Model remote code tries to import this class which was removed in newer transformers
+  - 模型远程代码尝试导入此类，但在新版 transformers 中已被移除
+
+### 📦 Installation | 安装方式
+
+```bash
+# Recommended installation (requires Python 3.12)
+pipx install --python python3.12 git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
+
+# Basic usage
+dsocr /path/to/image.png
+```
+
+---
+
 ## [1.0.0] - 2025-10-24
 
 ### 🎉 Initial Release | 首次发布
