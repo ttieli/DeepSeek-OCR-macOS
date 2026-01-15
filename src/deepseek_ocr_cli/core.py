@@ -17,7 +17,7 @@ def get_device(requested_device=None):
         return "mps"
     return "cpu"
 
-def load_model(device):
+def load_model(device, model_cache=None):
     """
     Load the DeepSeek-OCR model.
     """
@@ -25,9 +25,9 @@ def load_model(device):
     patch_transformers()
     
     # 2. Check/Download Model
-    model_path = check_model_exists()
+    model_path = check_model_exists(model_cache)
     if not model_path:
-        model_path = download_model()
+        model_path = download_model(model_cache)
     
     console.print(f"[dim]Loading model from {model_path}...[/dim]")
     
@@ -42,7 +42,17 @@ def load_model(device):
         use_safetensors=True
     )
     
-    model = model.eval().to(dtype=torch.bfloat16).to(device)
+    # Fallback logic for bfloat16 on older CPUs
+    dtype = torch.bfloat16
+    if device == "cpu":
+        try:
+            # Test if bfloat16 is supported for a simple operation
+            torch.tensor([1.0], dtype=torch.bfloat16).to("cpu")
+        except Exception:
+            console.print("[yellow]bfloat16 not fully supported on this CPU, falling back to float32.[/yellow]")
+            dtype = torch.float32
+
+    model = model.eval().to(dtype=dtype).to(device)
     
     return tokenizer, model
 
@@ -94,7 +104,7 @@ def run_inference(model, tokenizer, image, prompt, output_dir):
         if temp_img_path and temp_img_path.exists():
             temp_img_path.unlink()
 
-def process_file(input_path, url, mode, output_dir, device_arg):
+def process_file(input_path, url, mode, output_dir, device_arg, model_cache=None):
     """
     Main processing pipeline.
     """
@@ -137,7 +147,7 @@ def process_file(input_path, url, mode, output_dir, device_arg):
             transient=True,
         ) as progress:
             progress.add_task(description="Loading DeepSeek-OCR Model...", total=None)
-            tokenizer, model = load_model(device)
+            tokenizer, model = load_model(device, model_cache)
     except Exception as e:
         console.print(f"[red]Failed to load model: {e}[/red]")
         return
