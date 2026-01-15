@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deepseek-ocr-cli"
-version = "1.0.0"
+version = "1.0.1"
 description = "A local CLI for DeepSeek-OCR on macOS"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
