@@ -27,7 +27,7 @@ git clone https://github.com/ttieli/DeepSeek-OCR-macOS.git
 cd DeepSeek-OCR-macOS
 
 # Install (recommended)
-PYTHON=python3.12 pipx install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
+pipx install --python python3.12 git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
 # or
 PYTHON=python3.12 pip install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
 
