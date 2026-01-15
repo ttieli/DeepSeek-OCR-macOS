@@ -4,7 +4,14 @@ from pathlib import Path
 from transformers import AutoModel, AutoTokenizer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from .utils import check_model_exists, download_model, patch_transformers, download_file
+from .utils import (
+    check_model_exists,
+    download_model,
+    patch_transformers,
+    download_file,
+    disable_cuda,
+    clean_ocr_output,
+)
 from .converters import docx_to_pdf, pdf_to_images
 from PIL import Image
 
@@ -21,6 +28,9 @@ def load_model(device, model_cache=None):
     """
     Load the DeepSeek-OCR model.
     """
+    # 0. Force-disable CUDA if not explicitly using it (upstream infer() hardcodes .cuda())
+    disable_cuda(device)
+
     # 1. Patch transformers
     patch_transformers()
     
@@ -97,14 +107,15 @@ def run_inference(model, tokenizer, image, prompt, output_dir):
             image_size=640,
             crop_mode=True,
             save_results=False, # We want the text back, not just files
-            test_compress=True
+            test_compress=True,
+            eval_mode=True  # Return text instead of writing files
         )
         return result
     finally:
         if temp_img_path and temp_img_path.exists():
             temp_img_path.unlink()
 
-def process_file(input_path, url, mode, output_dir, device_arg, model_cache=None):
+def process_file(input_path, url, mode, output_dir, device_arg, model_cache=None, raw_output=False):
     """
     Main processing pipeline.
     """
@@ -200,7 +211,10 @@ def process_file(input_path, url, mode, output_dir, device_arg, model_cache=None
             
             # Append result
             full_markdown += f"## Page {idx+1}\n\n"
-            full_markdown += str(result) + "\n\n"
+            text_result = str(result)
+            if not raw_output:
+                text_result = clean_ocr_output(text_result)
+            full_markdown += text_result + "\n\n"
             
             progress.advance(task)
 

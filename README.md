@@ -19,14 +19,36 @@
 
 ## English
 
-### ⚡ Quick Start
+### ⚡ Quick Start (CLI)
 
 ```bash
 # Clone repository
 git clone https://github.com/ttieli/DeepSeek-OCR-macOS.git
 cd DeepSeek-OCR-macOS
 
-# Run script
+# Install (recommended)
+pipx install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
+# or
+pip install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
+
+# Basic usage
+dsocr /path/to/image.png --output ./ocr_output
+
+# Reuse local model cache (avoid re-download)
+dsocr /path/to/file.pdf --model-cache ~/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-OCR/snapshots/<hash>
+
+# Minimal: if installed globally via pipx
+dsocr /path/to/image.png
+```
+
+**Notes**
+- `--model-cache` lets you point to an existing model snapshot (e.g., the 6.2G already on disk) to skip downloads.
+- `--raw-output` keeps model markers (`<|ref|>`, `<|det|>`); by default output is cleaned to plain text.
+- `--device mps|cpu` can force device selection; defaults to auto.
+
+### ⚡ Quick Start (One-click script)
+
+```bash
 bash ocr_easy.sh
 ```
 
@@ -67,8 +89,8 @@ bash ocr_easy.sh
 1. **Miniforge3** (~100MB) - Python environment manager
 2. **Python** (~200MB) - Version auto-selected by chip
 3. **PyTorch** (~500MB) - Deep learning framework
-4. **Dependencies** (~300MB) - transformers, tokenizers, PyMuPDF, etc.
-5. **DeepSeek-OCR Model** (~10GB) - Downloads on first OCR run
+4. **Dependencies** (~300MB) - transformers, tokenizers, PyMuPDF, huggingface_hub, docx2pdf, etc.
+5. **DeepSeek-OCR Model** (~10GB) - Downloads on first OCR run (skip if `--model-cache` points to an existing snapshot)
 
 **Total:** ~11GB (one-time)
 
@@ -79,7 +101,23 @@ bash ocr_easy.sh
 - Internet connection (first run only)
 - Apple Silicon (M1/M2/M3) or Intel chip
 
-### 📖 Usage
+### 📖 Usage (CLI)
+
+```bash
+# Basic
+dsocr /path/to/image.png --output ./ocr_output
+
+# With model cache (no re-download)
+dsocr /path/to/file.pdf --model-cache ~/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-OCR/snapshots/<hash>
+
+# Keep raw model markers
+dsocr /path/to/image.png --raw-output
+
+# Force device
+dsocr /path/to/image.png --device cpu
+```
+
+### 📖 Usage (One-click script)
 
 ```bash
 # 1. Run script
@@ -147,7 +185,29 @@ MIT License - see [LICENSE](LICENSE)
 git clone https://github.com/ttieli/DeepSeek-OCR-macOS.git
 cd DeepSeek-OCR-macOS
 
-# 运行脚本
+# 安装（推荐）
+pipx install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
+# 或
+pip install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
+
+# 基础用法
+dsocr /path/to/image.png --output ./ocr_output
+
+# 复用本地模型缓存（避免重复下载）
+dsocr /path/to/file.pdf --model-cache ~/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-OCR/snapshots/<hash>
+
+# 如果是通过 pipx 全局安装，可直接运行
+dsocr /path/to/image.png
+```
+
+**说明**
+- `--model-cache` 指向现有的模型快照路径（例如已下载的 6.2G 文件），以跳过重新下载。
+- `--raw-output` 保留模型的原始标记（`<|ref|>`, `<|det|>`）；默认会自动清理为纯文本。
+- `--device mps|cpu` 可强制指定运行设备；默认为自动识别。
+
+### ⚡ 快速开始（一键脚本）
+
+```bash
 bash ocr_easy.sh
 ```
 

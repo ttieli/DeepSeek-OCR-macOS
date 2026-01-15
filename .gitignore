@@ -62,6 +62,15 @@ tmp/
 temp/
 *.tmp
 
+# Ignore internal workspace artifacts
+internal/
+# Allow tracked internal files (if any) to stay; new files will be ignored
+
+# Local venv and test artifacts
+internal/venv_test/
+internal/test_output/
+internal/test_sample.png
+
 # Claude
 .claude/
 
