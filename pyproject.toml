@@ -7,10 +7,11 @@ name = "deepseek-ocr-cli"
 version = "1.0.0"
 description = "A local CLI for DeepSeek-OCR on macOS"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 dependencies = [
-    "torch",
-    "torchvision",
+    # Pin PyTorch versions with Python<3.13 to ensure wheel availability on macOS
+    "torch==2.2.2",
+    "torchvision==0.17.2",
     "transformers>=4.46.3",
     "tokenizers>=0.20.3",
     "pymupdf",

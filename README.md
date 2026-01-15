@@ -27,9 +27,9 @@ git clone https://github.com/ttieli/DeepSeek-OCR-macOS.git
 cd DeepSeek-OCR-macOS
 
 # Install (recommended)
-pipx install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
+PYTHON=python3.12 pipx install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
 # or
-pip install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
+PYTHON=python3.12 pip install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
 
 # Basic usage
 dsocr /path/to/image.png --output ./ocr_output
@@ -185,10 +185,10 @@ MIT License - see [LICENSE](LICENSE)
 git clone https://github.com/ttieli/DeepSeek-OCR-macOS.git
 cd DeepSeek-OCR-macOS
 
-# 安装（推荐）
-pipx install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
+# 安装（推荐，需 Python3.12）
+PYTHON=python3.12 pipx install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
 # 或
-pip install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
+PYTHON=python3.12 pip install git+https://github.com/ttieli/DeepSeek-OCR-macOS.git
 
 # 基础用法
 dsocr /path/to/image.png --output ./ocr_output
