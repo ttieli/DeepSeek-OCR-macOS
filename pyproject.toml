@@ -12,6 +12,9 @@ dependencies = [
     # Pin PyTorch versions with Python<3.13 to ensure wheel availability on macOS
     "torch==2.2.2",
     "torchvision==0.17.2",
+    "numpy<2",
+    "addict",
+    "matplotlib",
     "transformers>=4.46.3",
     "tokenizers>=0.20.3",
     "pymupdf",
