@@ -52,9 +52,13 @@ def load_model(device, model_cache=None):
         use_safetensors=True
     )
     
-    # Fallback logic for bfloat16 on older CPUs
+    # Fallback logic for bfloat16 (MPS doesn't support it, older CPUs may not either)
     dtype = torch.bfloat16
-    if device == "cpu":
+    if device == "mps":
+        # MPS does not support bfloat16, use float16 instead
+        console.print("[yellow]MPS does not support bfloat16, using float16.[/yellow]")
+        dtype = torch.float16
+    elif device == "cpu":
         try:
             # Test if bfloat16 is supported for a simple operation
             torch.tensor([1.0], dtype=torch.bfloat16).to("cpu")
